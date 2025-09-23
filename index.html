@@ -4,13 +4,25 @@
   <meta charset="UTF-8">
   <title>แผนผังถังดับเพลิง</title>
   <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
     .map-container {
       position: relative;
-      width: 876px;
-      height: 598px;
-      background-image: url('Lay out AMB2.jpg'); /* เปลี่ยนเป็นชื่อไฟล์ภาพจริงของคุณ */
+      width: 100%;
+      max-width: 876px;
+      aspect-ratio: 876 / 598;
+      background-image: url('Lay out AMB2.jpg'); /* เปลี่ยนชื่อไฟล์ให้ตรงกับรูปภาพของคุณ */
       background-size: cover;
+      background-position: center;
       border: 1px solid #ccc;
+      margin: auto;
     }
 
     .marker {
@@ -37,6 +49,7 @@
       border-radius: 4px;
       font-size: 12px;
       white-space: nowrap;
+      z-index: 10;
     }
   </style>
 </head>
@@ -45,6 +58,7 @@
   <div class="map-container" id="map"></div>
 
   <script>
+    // ระบุ Google Sheet ID และชื่อชีต
     const SHEET_ID = "18YbWGcRIHhxv40v_7NTXQUNL3mV9jnNQrjfcUOvQEQs";
     const SHEET_NAME = "Zone AMB2";
     const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
@@ -57,48 +71,63 @@
 
         const coords = [];
 
-        rows.forEach(row => {
-          const name = row.c[2]?.v || "";     // หมายเลขถัง (คอลัมน์ C)
-          const xyStr = row.c[12]?.v || "";   // พิกัด (คอลัมน์ M ซึ่งเป็น index 12)
+        rows.forEach((row, i) => {
+          const name = row.c[2]?.v || "";     // คอลัมน์ C = index 2
+          const xyStr = row.c[12]?.v || "";   // คอลัมน์ M = index 12
 
-          if (!xyStr.includes(",")) return;
+          if (!xyStr.includes(",")) {
+            console.warn(`แถว ${i} ไม่มีพิกัดที่ถูกต้อง: ${xyStr}`);
+            return;
+          }
 
           const [xStr, yStr] = xyStr.split(",");
           const x = parseFloat(xStr.trim());
           const y = parseFloat(yStr.trim());
-          if (isNaN(x) || isNaN(y)) return;
+
+          if (isNaN(x) || isNaN(y)) {
+            console.warn(`แถว ${i} มีพิกัดที่ไม่ใช่ตัวเลข: x=${xStr}, y=${yStr}`);
+            return;
+          }
 
           coords.push({ x, y, name });
         });
 
         if (coords.length === 0) {
-          console.warn("ไม่มีข้อมูลพิกัดที่ถูกต้อง");
+          console.error("ไม่มีข้อมูลพิกัดที่ถูกต้อง");
           return;
         }
 
+        // ใช้ค่าพิกัดแบบสัมพัทธ์ (เช่น AppSheet XY) → แปลงเป็น % ตรง ๆ
         const minX = Math.min(...coords.map(c => c.x));
         const maxX = Math.max(...coords.map(c => c.x));
         const minY = Math.min(...coords.map(c => c.y));
         const maxY = Math.max(...coords.map(c => c.y));
 
+        const xRange = maxX - minX || 1;
+        const yRange = maxY - minY || 1;
+
         const map = document.getElementById("map");
 
         coords.forEach(({ x, y, name }) => {
-          const leftPercent = ((x - minX) / (maxX - minX)) * 100;
-          const topPercent = ((y - minY) / (maxY - minY)) * 100;
+          const leftPercent = ((x - minX) / xRange) * 100;
+          const topPercent  = ((y - minY) / yRange) * 100;
 
           const marker = document.createElement("div");
           marker.className = "marker";
-          marker.style.left = leftPercent + "%";
-          marker.style.top = topPercent + "%";
+          marker.style.left = `${leftPercent}%`;
+          marker.style.top = `${topPercent}%`;
           marker.setAttribute("data-name", name);
 
           map.appendChild(marker);
         });
       })
-      .catch(err => console.error("โหลดข้อมูลไม่สำเร็จ:", err));
+      .catch(err => {
+        console.error("โหลดข้อมูลไม่สำเร็จ:", err);
+      });
   </script>
 </body>
 </html>
+
+
 
 
