@@ -15,12 +15,28 @@
 
     .marker {
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 20px;
+      height: 20px;
       background-color: red;
+      border: 2px solid white;
+      box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
       border-radius: 50%;
       transform: translate(-50%, -50%);
       cursor: pointer;
+    }
+
+    .marker:hover::after {
+      content: attr(data-name);
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      white-space: nowrap;
     }
   </style>
 </head>
@@ -36,15 +52,14 @@
     fetch(jsonUrl)
       .then(res => res.text())
       .then(text => {
-        // Google ใส่ wrapper ไว้ ต้องตัดออก
         const json = JSON.parse(text.substr(47).slice(0, -2));
         const rows = json.table.rows;
 
         const coords = [];
 
-        rows.forEach((row, i) => {
+        rows.forEach(row => {
           const name = row.c[2]?.v || "";     // หมายเลขถัง (คอลัมน์ C)
-          const xyStr = row.c[11]?.v || "";   // พิกัด (คอลัมน์ L)
+          const xyStr = row.c[12]?.v || "";   // พิกัด (คอลัมน์ M ซึ่งเป็น index 12)
 
           if (!xyStr.includes(",")) return;
 
@@ -61,7 +76,6 @@
           return;
         }
 
-        // คำนวณขอบเขตเพื่อทำสัดส่วน
         const minX = Math.min(...coords.map(c => c.x));
         const maxX = Math.max(...coords.map(c => c.x));
         const minY = Math.min(...coords.map(c => c.y));
@@ -77,7 +91,8 @@
           marker.className = "marker";
           marker.style.left = leftPercent + "%";
           marker.style.top = topPercent + "%";
-          marker.title = name;
+          marker.setAttribute("data-name", name);
+
           map.appendChild(marker);
         });
       })
@@ -85,3 +100,5 @@
   </script>
 </body>
 </html>
+
+
