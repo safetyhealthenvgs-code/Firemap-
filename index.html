@@ -17,18 +17,33 @@
       position: relative;
       width: 100%;
       max-width: 876px;
-      aspect-ratio: 876 / 598;
-      background-image: url('Lay out AMB2.jpg'); /* เปลี่ยนชื่อไฟล์ให้ตรงกับรูปภาพของคุณ */
-      background-size: cover;
-      background-position: center;
+      aspect-ratio: 876 / 598; /* ปรับตามขนาดภาพจริง */
+      background-image: url('https://raw.githubusercontent.com/safetyhealthenvgs-code/Firemap-/main/Lay%20out%20AMB2.jpg');
+      background-size: contain;
+      background-position: top left;
+      background-repeat: no-repeat;
       border: 1px solid #ccc;
       margin: auto;
     }
 
+    .map-container::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image:
+        linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+      background-size: 10% 10%;
+      pointer-events: none;
+    }
+
     .marker {
       position: absolute;
-      width: 10px;
-      height: 10px;
+      width: 12px;
+      height: 12px;
       background-color: red;
       border: 2px solid white;
       box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
@@ -58,44 +73,52 @@
   <div class="map-container" id="map"></div>
 
   <script>
-    // ระบุ Google Sheet ID และชื่อชีต
     const SHEET_ID = "18YbWGcRIHhxv40v_7NTXQUNL3mV9jnNQrjfcUOvQEQs";
     const SHEET_NAME = "Zone AMB2";
     const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
     fetch(jsonUrl)
-  .then(res => res.text())
-  .then(text => {
-    const json = JSON.parse(text.substr(47).slice(0, -2));
-    const rows = json.table.rows;
+      .then(res => res.text())
+      .then(text => {
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        const rows = json.table.rows;
 
-    rows.forEach((row, i) => {
-      const name = row.c[2]?.v || "";
-      const xyStr = row.c[12]?.v || "";
+        rows.forEach((row, i) => {
+          const name = row.c[2]?.v || "";     // ชื่อถังดับเพลิง (คอลัมน์ C)
+          const xyStr = row.c[12]?.v || "";   // พิกัด XY (คอลัมน์ M)
 
-      if (!xyStr.includes(",")) return;
+          if (!xyStr.includes(",")) {
+            console.warn(`แถว ${i} ไม่มีพิกัดที่ถูกต้อง: ${xyStr}`);
+            return;
+          }
 
-      const [xStr, yStr] = xyStr.split(",");
-      const x = parseFloat(xStr.trim());
-      const y = parseFloat(yStr.trim());
+          const [xStr, yStr] = xyStr.split(",");
+          const x = parseFloat(xStr.trim());
+          const y = parseFloat(yStr.trim());
 
-      if (isNaN(x) || isNaN(y)) return;
+          if (isNaN(x) || isNaN(y)) {
+            console.warn(`แถว ${i} มีพิกัดที่ไม่ใช่ตัวเลข: x=${xStr}, y=${yStr}`);
+            return;
+          }
 
-      const marker = document.createElement("div");
-      marker.className = "marker";
-      marker.style.left = `${x}%`;
-      marker.style.top = `${y}%`;
-      marker.setAttribute("data-name", name);
+          // แสดง marker จากพิกัด 0–100
+          const marker = document.createElement("div");
+          marker.className = "marker";
+          marker.style.left = `${x}%`;
+          marker.style.top = `${y}%`;
+          marker.setAttribute("data-name", name);
 
-      document.getElementById("map").appendChild(marker);
-    });
-  });
+          document.getElementById("map").appendChild(marker);
+        });
+      })
       .catch(err => {
         console.error("โหลดข้อมูลไม่สำเร็จ:", err);
       });
   </script>
 </body>
 </html>
+
+
 
 
 
