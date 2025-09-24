@@ -64,69 +64,39 @@
     const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
     fetch(jsonUrl)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        const rows = json.table.rows;
+  .then(res => res.text())
+  .then(text => {
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const rows = json.table.rows;
 
-        const coords = [];
+    rows.forEach((row, i) => {
+      const name = row.c[2]?.v || "";
+      const xyStr = row.c[12]?.v || "";
 
-        rows.forEach((row, i) => {
-          const name = row.c[2]?.v || "";     // คอลัมน์ C = index 2
-          const xyStr = row.c[12]?.v || "";   // คอลัมน์ M = index 12
+      if (!xyStr.includes(",")) return;
 
-          if (!xyStr.includes(",")) {
-            console.warn(`แถว ${i} ไม่มีพิกัดที่ถูกต้อง: ${xyStr}`);
-            return;
-          }
+      const [xStr, yStr] = xyStr.split(",");
+      const x = parseFloat(xStr.trim());
+      const y = parseFloat(yStr.trim());
 
-          const [xStr, yStr] = xyStr.split(",");
-          const x = parseFloat(xStr.trim());
-          const y = parseFloat(yStr.trim());
+      if (isNaN(x) || isNaN(y)) return;
 
-          if (isNaN(x) || isNaN(y)) {
-            console.warn(`แถว ${i} มีพิกัดที่ไม่ใช่ตัวเลข: x=${xStr}, y=${yStr}`);
-            return;
-          }
+      const marker = document.createElement("div");
+      marker.className = "marker";
+      marker.style.left = `${x}%`;
+      marker.style.top = `${y}%`;
+      marker.setAttribute("data-name", name);
 
-          coords.push({ x, y, name });
-        });
-
-        if (coords.length === 0) {
-          console.error("ไม่มีข้อมูลพิกัดที่ถูกต้อง");
-          return;
-        }
-
-        // ใช้ค่าพิกัดแบบสัมพัทธ์ (เช่น AppSheet XY) → แปลงเป็น % ตรง ๆ
-        const minX = Math.min(...coords.map(c => c.x));
-        const maxX = Math.max(...coords.map(c => c.x));
-        const minY = Math.min(...coords.map(c => c.y));
-        const maxY = Math.max(...coords.map(c => c.y));
-
-        const xRange = maxX - minX || 1;
-        const yRange = maxY - minY || 1;
-
-        const map = document.getElementById("map");
-
-        coords.forEach(({ x, y, name }) => {
-          const leftPercent = ((x - minX) / xRange) * 100;
-          const topPercent  = ((y - minY) / yRange) * 100;
-
-          const marker = document.createElement("div");
-          marker.className = "marker";
-          marker.style.left = `${leftPercent}%`;
-          marker.style.top = `${topPercent}%`;
-          marker.setAttribute("data-name", name);
-
-          map.appendChild(marker);
-        });
-      })
+      document.getElementById("map").appendChild(marker);
+    });
+  });
       .catch(err => {
         console.error("โหลดข้อมูลไม่สำเร็จ:", err);
       });
   </script>
 </body>
 </html>
+
 
 
 
