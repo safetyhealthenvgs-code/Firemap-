@@ -73,55 +73,57 @@
   <div class="map-container" id="map"></div>
 
   <script>
-    const SHEET_ID = "18YbWGcRIHhxv40v_7NTXQUNL3mV9jnNQrjfcUOvQEQs";
-    const SHEET_NAME = "Zone AMB2";
-    const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  const SHEET_ID = "18YbWGcRIHhxv40v_7NTXQUNL3mV9jnNQrjfcUOvQEQs";
+  const SHEET_NAME = "Zone AMB2";
+  const jsonUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
 
-    fetch(jsonUrl)
-      .then(res => res.text())
-      .then(text => {
-        const json = JSON.parse(text.substr(47).slice(0, -2));
-        const rows = json.table.rows;
+  fetch(jsonUrl)
+    .then(res => res.text())
+    .then(text => {
+      const json = JSON.parse(text.substr(47).slice(0, -2));
+      const rows = json.table.rows;
 
-        rows.forEach((row, i) => {
-          const date = row.c[1]?.v || "";     // วันที่ตรวจ (คอลัมน์ 2)
-          const inspector = row.c[2]?.v || "";// ชื่อผู้ตรวจ (คอลัมน์ 3)
-          const number = row.c[3]?.v || "";   // หมายเลขถัง (คอลัมน์ 4)
-          const xyStr = row.c[13]?.v || "";   // พิกัด XY (คอลัมน์ 14)
+      rows.forEach((row, i) => {
+        // --- ดึงข้อมูล ---
+        const number = row.c[3]?.v || "";      // หมายเลขถัง (คอลัมน์ 4)
+        const inspector = row.c[2]?.v || "";   // ผู้ตรวจ (คอลัมน์ 3)
+        const xyStr = row.c[13]?.v || "";      // พิกัด XY (คอลัมน์ 14)
 
-          if (!xyStr.includes(",")) {
-            console.warn(`แถว ${i} ไม่มีพิกัดที่ถูกต้อง: ${xyStr}`);
-            return;
-          }
+        if (!xyStr.includes(",")) return;
 
-          const [xStr, yStr] = xyStr.split(",");
-          const x = parseFloat(xStr.trim());
-          const y = parseFloat(yStr.trim());
+        const [xStr, yStr] = xyStr.split(",");
+        const x = parseFloat(xStr.trim());
+        const y = parseFloat(yStr.trim());
+        if (isNaN(x) || isNaN(y)) return;
 
-          if (isNaN(x) || isNaN(y)) {
-            console.warn(`แถว ${i} มีพิกัดที่ไม่ใช่ตัวเลข: x=${xStr}, y=${yStr}`);
-            return;
-          }
+        // --- ใช้วันที่ปัจจุบัน ---
+        const now = new Date();
+        const day = now.getDate();
+        const month = now.getMonth() + 1; // เดือนจริง +1
+        const year = now.getFullYear() + 543; // พ.ศ.
 
-          // สร้างข้อความ tooltip
-          const info = `วันที่ตรวจ: ${date}\nหมายเลขถัง: ${number}\nผู้ตรวจ: ${inspector}`;
+        const dateStr = `${day}/${month}/${year}`; // รูปแบบ 27/9/2568
 
-          // แสดง marker จากพิกัด 0–100
-          const marker = document.createElement("div");
-          marker.className = "marker";
-          marker.style.left = `${x}%`;
-          marker.style.top = `${y}%`;
-          marker.setAttribute("data-info", info);
+        // --- สร้าง tooltip ---
+        const info = `วันที่ตรวจ: ${dateStr} หมายเลขถัง: ${number} ผู้ตรวจ: ${inspector}`;
 
-          document.getElementById("map").appendChild(marker);
-        });
-      })
-      .catch(err => {
-        console.error("โหลดข้อมูลไม่สำเร็จ:", err);
+        // --- สร้าง marker ---
+        const marker = document.createElement("div");
+        marker.className = "marker";
+        marker.style.left = `${x}%`;
+        marker.style.top = `${y}%`;
+        marker.setAttribute("data-name", info);
+
+        document.getElementById("map").appendChild(marker);
       });
-  </script>
+    })
+    .catch(err => {
+      console.error("โหลดข้อมูลไม่สำเร็จ:", err);
+    });
+</script>
 </body>
 </html>
+
 
 
 
