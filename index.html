@@ -86,38 +86,39 @@
         const json = JSON.parse(text.substr(47).slice(0, -2));
         const rows = json.table.rows;
 
-        rows.forEach((row, i) => {
-          // ดึงข้อมูลแต่ละคอลัมน์
-          const inspector = row.c[2]?.v || "";   // ผู้ตรวจ (คอลัมน์ 3)
-          const number = row.c[3]?.v || "";      // หมายเลขถัง (คอลัมน์ 4)
-          const xyStr = row.c[13]?.v || "";      // พิกัด XY (คอลัมน์ 14)
+rows.forEach((row, i) => {
+  const inspector = row.c[2]?.v || "";   // ผู้ตรวจ
+  const number = row.c[3]?.v || "";      // หมายเลขถัง
+  const xyStr = row.c[13]?.v || "";      // พิกัด XY
 
-          if (!xyStr.includes(",")) return;
+  if (!xyStr.includes(",")) return;
 
-          const [xStr, yStr] = xyStr.split(",");
-          const x = parseFloat(xStr.trim());
-          const y = parseFloat(yStr.trim());
-          if (isNaN(x) || isNaN(y)) return;
+  const [xStr, yStr] = xyStr.split(",");
+  const x = parseFloat(xStr.trim());
+  const y = parseFloat(yStr.trim());
+  if (isNaN(x) || isNaN(y)) return;
 
-          // ใช้วันที่ปัจจุบัน
-          const now = new Date();
-          const day = now.getDate();
-          const month = now.getMonth() + 1; // +1 เพราะ JS นับเดือนจาก 0
-          const year = now.getFullYear() + 543; // เป็น พ.ศ.
-          const dateStr = `${day}/${month}/${year}`;
+  // วันที่ปัจจุบัน
+  const now = new Date();
+  const day = now.getDate();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear() + 543;
+  const dateStr = `${day}/${month}/${year}`;
 
-          // สร้างข้อความ tooltip แยกบรรทัดด้วย \A
-          const info = `วันที่ตรวจ: ${dateStr}\Aหมายเลขถัง: ${number}\Aผู้ตรวจ: ${inspector}`;
+  // สร้าง marker
+  const marker = document.createElement("div");
+  marker.className = "marker";
+  marker.style.left = `${x}%`;
+  marker.style.top = `${y}%`;
 
-          // สร้าง marker
-          const marker = document.createElement("div");
-          marker.className = "marker";
-          marker.style.left = `${x}%`;
-          marker.style.top = `${y}%`;
-          marker.setAttribute("data-name", info);
+  // สร้าง tooltip
+  const tooltip = document.createElement("span");
+  tooltip.className = "tooltip";
+  tooltip.innerText = `วันที่ตรวจ: ${dateStr}\nหมายเลขถัง: ${number}\nผู้ตรวจ: ${inspector}`;
 
-          document.getElementById("map").appendChild(marker);
-        });
+  marker.appendChild(tooltip);
+  document.getElementById("map").appendChild(marker);
+});
       })
       .catch(err => {
         console.error("โหลดข้อมูลไม่สำเร็จ:", err);
@@ -125,6 +126,7 @@
   </script>
 </body>
 </html>
+
 
 
 
