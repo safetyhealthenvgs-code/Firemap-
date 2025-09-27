@@ -17,7 +17,7 @@
       position: relative;
       width: 100%;
       max-width: 876px;
-      aspect-ratio: 876 / 598; /* ปรับตามขนาดภาพจริง */
+      aspect-ratio: 876 / 598;
       background-image: url('https://raw.githubusercontent.com/safetyhealthenvgs-code/Firemap-/main/Lay%20out%20AMB2.jpg');
       background-size: contain;
       background-position: top left;
@@ -52,22 +52,19 @@
       cursor: pointer;
     }
 
-    /* Tooltip เมื่อเอาเมาส์ไปชี้ */
     .marker:hover::after {
-      content: attr(data-name);
+      content: attr(data-info);
       position: absolute;
-      top: -60px;
+      top: -45px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.8);
       color: white;
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 12px;
-      white-space: pre-line; /* ให้ \A แปลเป็นขึ้นบรรทัด */
+      white-space: nowrap;
       z-index: 10;
-      max-width: 200px;
-      text-align: center;
     }
   </style>
 </head>
@@ -86,39 +83,38 @@
         const json = JSON.parse(text.substr(47).slice(0, -2));
         const rows = json.table.rows;
 
-rows.forEach((row, i) => {
-  const inspector = row.c[2]?.v || "";   // ผู้ตรวจ
-  const number = row.c[3]?.v || "";      // หมายเลขถัง
-  const xyStr = row.c[13]?.v || "";      // พิกัด XY
+        rows.forEach((row, i) => {
+          const date = row.c[1]?.v || "";     // วันที่ตรวจ (คอลัมน์ 2)
+          const inspector = row.c[2]?.v || "";// ชื่อผู้ตรวจ (คอลัมน์ 3)
+          const number = row.c[3]?.v || "";   // หมายเลขถัง (คอลัมน์ 4)
+          const xyStr = row.c[13]?.v || "";   // พิกัด XY (คอลัมน์ 14)
 
-  if (!xyStr.includes(",")) return;
+          if (!xyStr.includes(",")) {
+            console.warn(`แถว ${i} ไม่มีพิกัดที่ถูกต้อง: ${xyStr}`);
+            return;
+          }
 
-  const [xStr, yStr] = xyStr.split(",");
-  const x = parseFloat(xStr.trim());
-  const y = parseFloat(yStr.trim());
-  if (isNaN(x) || isNaN(y)) return;
+          const [xStr, yStr] = xyStr.split(",");
+          const x = parseFloat(xStr.trim());
+          const y = parseFloat(yStr.trim());
 
-  // วันที่ปัจจุบัน
-  const now = new Date();
-  const day = now.getDate();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear() + 543;
-  const dateStr = `${day}/${month}/${year}`;
+          if (isNaN(x) || isNaN(y)) {
+            console.warn(`แถว ${i} มีพิกัดที่ไม่ใช่ตัวเลข: x=${xStr}, y=${yStr}`);
+            return;
+          }
 
-  // สร้าง marker
-  const marker = document.createElement("div");
-  marker.className = "marker";
-  marker.style.left = `${x}%`;
-  marker.style.top = `${y}%`;
+          // สร้างข้อความ tooltip
+          const info = `วันที่ตรวจ: ${date}\nหมายเลขถัง: ${number}\nผู้ตรวจ: ${inspector}`;
 
-  // สร้าง tooltip
-  const tooltip = document.createElement("span");
-  tooltip.className = "tooltip";
-  tooltip.innerText = `วันที่ตรวจ: ${dateStr}\nหมายเลขถัง: ${number}\nผู้ตรวจ: ${inspector}`;
+          // แสดง marker จากพิกัด 0–100
+          const marker = document.createElement("div");
+          marker.className = "marker";
+          marker.style.left = `${x}%`;
+          marker.style.top = `${y}%`;
+          marker.setAttribute("data-info", info);
 
-  marker.appendChild(tooltip);
-  document.getElementById("map").appendChild(marker);
-});
+          document.getElementById("map").appendChild(marker);
+        });
       })
       .catch(err => {
         console.error("โหลดข้อมูลไม่สำเร็จ:", err);
@@ -126,6 +122,8 @@ rows.forEach((row, i) => {
   </script>
 </body>
 </html>
+
+
 
 
 
